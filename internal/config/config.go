@@ -15,6 +15,7 @@ type Config struct {
 	App      AppConfig
 	File     FileConfig
 	Points   PointsConfig
+	Email    EmailConfig
 }
 
 type ServerConfig struct {
@@ -61,6 +62,15 @@ type PointsConfig struct {
 	InactivityMonths       int // Meses de inactividad para penalización
 	InactivityPenalty      int64 // Puntos a restar por inactividad
 	NotificationBeforeDays int // Días antes de notificar expiración
+}
+
+type EmailConfig struct {
+	SMTPHost     string
+	SMTPPort     int
+	SMTPUser     string
+	SMTPPassword string
+	FromEmail    string
+	FromName     string
 }
 
 func Load() (*Config, error) {
@@ -126,6 +136,14 @@ func Load() (*Config, error) {
 			InactivityPenalty:      viper.GetInt64("INACTIVITY_PENALTY"),
 			NotificationBeforeDays: viper.GetInt("NOTIFICATION_BEFORE_DAYS"),
 		},
+		Email: EmailConfig{
+			SMTPHost:     viper.GetString("SMTP_HOST"),
+			SMTPPort:     viper.GetInt("SMTP_PORT"),
+			SMTPUser:     viper.GetString("SMTP_USER"),
+			SMTPPassword: viper.GetString("SMTP_PASSWORD"),
+			FromEmail:    viper.GetString("EMAIL_FROM"),
+			FromName:     viper.GetString("EMAIL_FROM_NAME"),
+		},
 	}
 
 	if err := config.Validate(); err != nil {
@@ -175,6 +193,14 @@ func setDefaults() {
 	viper.SetDefault("INACTIVITY_MONTHS", 6)         // 6 meses
 	viper.SetDefault("INACTIVITY_PENALTY", 100)      // 100 puntos
 	viper.SetDefault("NOTIFICATION_BEFORE_DAYS", 7)  // 7 días antes
+
+	// Email defaults
+	viper.SetDefault("SMTP_HOST", "smtp.gmail.com")
+	viper.SetDefault("SMTP_PORT", 587)
+	viper.SetDefault("SMTP_USER", "")
+	viper.SetDefault("SMTP_PASSWORD", "")
+	viper.SetDefault("EMAIL_FROM", "noreply@gopoints.com")
+	viper.SetDefault("EMAIL_FROM_NAME", "Go Points")
 }
 
 func (c *Config) Validate() error {

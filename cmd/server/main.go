@@ -31,6 +31,7 @@ import (
 	"github.com/Ju4n-Dieg0/Go_Points/internal/shared/errors"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/shared/logger"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/shared/middleware"
+	"github.com/Ju4n-Dieg0/Go_Points/internal/shared/notifications"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -97,7 +98,14 @@ func main() {
 	// Services
 	emailService := service.NewStubEmailService()
 	fileService := service.NewLocalFileService(cfg.File)
-	notificationService := service.NewStubNotificationService()
+	
+	// Notification services - usando composite para enviar a múltiples destinos
+	logNotificationService := notifications.NewLogNotificationService(logger.GetLogger())
+	emailNotificationService := notifications.NewEmailNotificationService(&cfg.Email)
+	notificationService := notifications.NewCompositeNotificationService(
+		logNotificationService,
+		emailNotificationService,
+	)
 	authSvc := authService.NewService(authRepo, emailService, &cfg.JWT)
 	companySvc := companyService.NewService(companyRepo, subscriptionRepo, db.GetDB())
 	subscriptionSvc := subscriptionService.NewService(subscriptionRepo, companyRepo, db.GetDB())

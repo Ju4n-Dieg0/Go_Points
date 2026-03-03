@@ -9,6 +9,7 @@ import (
 	domainPoint "github.com/Ju4n-Dieg0/Go_Points/internal/domain/point"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/shared/errors"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/shared/logger"
+	"github.com/Ju4n-Dieg0/Go_Points/internal/shared/notifications"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -49,7 +50,7 @@ type service struct {
 	balanceRepo         domainPoint.BalanceRepository
 	transactionRepo     domainPoint.TransactionRepository
 	rankConfigRepo      domainPoint.RankConfigRepository
-	notificationService domainPoint.NotificationService
+	notificationService notifications.Service
 	config              config.PointsConfig
 }
 
@@ -59,7 +60,7 @@ func NewService(
 	balanceRepo domainPoint.BalanceRepository,
 	transactionRepo domainPoint.TransactionRepository,
 	rankConfigRepo domainPoint.RankConfigRepository,
-	notificationService domainPoint.NotificationService,
+	notificationService notifications.Service,
 	cfg config.PointsConfig,
 ) Service {
 	return &service{
@@ -408,8 +409,8 @@ func (s *service) expireTransaction(ctx context.Context, tx *domainPoint.PointTr
 			return err
 		}
 
-		// Notificar
-		_ = s.notificationService.NotifyPointsExpired(ctx, tx.ConsumerID, tx.CompanyID, pointsToExpire)
+		// TODO: Implementar notificación con datos completos (requiere consumer y company repos)
+		// _ = s.notificationService.NotifyRedemption(ctx, notifications.RedemptionData{...})
 
 		logger.Info("Points expired",
 			"consumer_id", tx.ConsumerID,
@@ -479,8 +480,8 @@ func (s *service) applyInactivityPenalty(ctx context.Context, balance *domainPoi
 			return err
 		}
 
-		// Notificar
-		_ = s.notificationService.NotifyInactivityPenalty(ctx, balance.ConsumerID, balance.CompanyID, penalty)
+		// TODO: Implementar notificación con datos completos
+		// _ = s.notificationService.NotifyRedemption(ctx, notifications.RedemptionData{...})
 
 		logger.Info("Inactivity penalty applied",
 			"consumer_id", balance.ConsumerID,
@@ -507,18 +508,22 @@ func (s *service) NotifyExpiringSoon(ctx context.Context) error {
 			continue
 		}
 
-		if err := s.notificationService.NotifyPointsExpiring(
-			ctx,
-			tx.ConsumerID,
-			tx.CompanyID,
-			tx.RemainingPoints,
-			*tx.ExpirationDate,
-		); err != nil {
-			logger.Error("Failed to send notification",
-				"consumer_id", tx.ConsumerID,
-				"error", err,
-			)
-		}
+		// TODO: Implementar notificación con datos completos (requiere consumer y company repos)
+		// daysUntilExpiry := int(time.Until(*tx.ExpirationDate).Hours() / 24)
+		// _ = s.notificationService.NotifyPointExpiring(ctx, notifications.PointExpiringData{
+		//     ConsumerID:      tx.ConsumerID,
+		//     CompanyID:       tx.CompanyID,
+		//     Points:          tx.RemainingPoints,
+		//     ExpirationDate:  *tx.ExpirationDate,
+		//     DaysUntilExpiry: daysUntilExpiry,
+		// })
+
+		logger.Info("Point expiring notification needed",
+			"consumer_id", tx.ConsumerID,
+			"company_id", tx.CompanyID,
+			"points", tx.RemainingPoints,
+			"expiration_date", tx.ExpirationDate,
+		)
 	}
 
 	return nil

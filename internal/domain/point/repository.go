@@ -2,7 +2,6 @@ package point
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -60,16 +59,4 @@ type RankConfigRepository interface {
 
 	// Upsert crea o actualiza una configuración
 	Upsert(ctx context.Context, config *CompanyRankConfig) error
-}
-
-// NotificationService define la interfaz para enviar notificaciones
-type NotificationService interface {
-	// NotifyPointsExpiring notifica que puntos están por expirar
-	NotifyPointsExpiring(ctx context.Context, consumerID, companyID uuid.UUID, points int64, expirationDate time.Time) error
-
-	// NotifyPointsExpired notifica que puntos han expirado
-	NotifyPointsExpired(ctx context.Context, consumerID, companyID uuid.UUID, points int64) error
-
-	// NotifyInactivityPenalty notifica penalización por inactividad
-	NotifyInactivityPenalty(ctx context.Context, consumerID, companyID uuid.UUID, penalty int64) error
 }

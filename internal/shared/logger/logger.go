@@ -66,3 +66,8 @@ func Error(msg string, args ...any) {
 func With(args ...any) *slog.Logger {
 	return Log.With(args...)
 }
+
+// GetLogger retorna la instancia global del logger
+func GetLogger() *slog.Logger {
+	return Log
+}
