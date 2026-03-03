@@ -13,6 +13,7 @@ import (
 	consumerService "github.com/Ju4n-Dieg0/Go_Points/internal/application/consumer"
 	pointService "github.com/Ju4n-Dieg0/Go_Points/internal/application/point"
 	productService "github.com/Ju4n-Dieg0/Go_Points/internal/application/product"
+	rewardService "github.com/Ju4n-Dieg0/Go_Points/internal/application/reward"
 	subscriptionService "github.com/Ju4n-Dieg0/Go_Points/internal/application/subscription"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/config"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/database"
@@ -21,6 +22,7 @@ import (
 	"github.com/Ju4n-Dieg0/Go_Points/internal/domain/consumer"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/domain/point"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/domain/product"
+	"github.com/Ju4n-Dieg0/Go_Points/internal/domain/reward"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/domain/subscription"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/infrastructure/http/handler"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/infrastructure/http/routes"
@@ -70,6 +72,9 @@ func main() {
 		&point.ConsumerCompanyPoints{},
 		&point.PointTransaction{},
 		&point.CompanyRankConfig{},
+		&reward.Reward{},
+		&reward.RewardPath{},
+		&reward.RewardPathItem{},
 	); err != nil {
 		logger.Error("Failed to run migrations", "error", err)
 		os.Exit(1)
@@ -85,6 +90,9 @@ func main() {
 	balanceRepo := persistence.NewBalanceRepository(db.GetDB())
 	transactionRepo := persistence.NewTransactionRepository(db.GetDB())
 	rankConfigRepo := persistence.NewRankConfigRepository(db.GetDB())
+	rewardRepo := persistence.NewRewardRepository(db.GetDB())
+	rewardPathRepo := persistence.NewRewardPathRepository(db.GetDB())
+	rewardPathItemRepo := persistence.NewRewardPathItemRepository(db.GetDB())
 
 	// Services
 	emailService := service.NewStubEmailService()
@@ -96,6 +104,7 @@ func main() {
 	consumerSvc := consumerService.NewService(consumerRepo)
 	productSvc := productService.NewService(productRepo, fileService, subscriptionSvc)
 	pointSvc := pointService.NewService(db.GetDB(), balanceRepo, transactionRepo, rankConfigRepo, notificationService, cfg.Points)
+	rewardSvc := rewardService.NewRewardService(db.GetDB(), rewardRepo, rewardPathRepo, rewardPathItemRepo, companyRepo, productRepo, subscriptionSvc)
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authSvc)
@@ -104,12 +113,13 @@ func main() {
 	consumerHandler := handler.NewConsumerHandler(consumerSvc)
 	productHandler := handler.NewProductHandler(productSvc)
 	pointHandler := handler.NewPointHandler(pointSvc)
+	rewardHandler := handler.NewRewardHandler(rewardSvc)
 
 	// Crear aplicación Fiber
 	app := createFiberApp(cfg)
 
 	// Configurar rutas
-	setupRoutes(app, db, authHandler, companyHandler, subscriptionHandler, consumerHandler, productHandler, pointHandler, cfg)
+	setupRoutes(app, db, authHandler, companyHandler, subscriptionHandler, consumerHandler, productHandler, pointHandler, rewardHandler, cfg)
 
 	// Iniciar servidor en una goroutine
 	go func() {
@@ -157,6 +167,7 @@ func setupRoutes(
 	consumerHandler *handler.ConsumerHandler,
 	productHandler *handler.ProductHandler,
 	pointHandler *handler.PointHandler,
+	rewardHandler *handler.RewardHandler,
 	cfg *config.Config,
 ) {
 	// Health check endpoint
@@ -196,6 +207,7 @@ func setupRoutes(
 	routes.SetupConsumerRoutes(api, consumerHandler, &cfg.JWT)
 	routes.SetupProductRoutes(api, productHandler, &cfg.JWT)
 	routes.SetupPointRoutes(api, pointHandler, &cfg.JWT)
+	routes.SetupRewardRoutes(api, rewardHandler, &cfg.JWT)
 
 	// Aquí se agregarán más rutas cuando se implementen otros módulos
 	// Ejemplo:
