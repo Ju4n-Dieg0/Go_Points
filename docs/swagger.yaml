@@ -1,5 +1,31 @@
 basePath: /api/v1
 definitions:
+  APIError:
+    description: Detalles del error cuando success=false
+    properties:
+      code:
+        example: VALIDATION_ERROR
+        type: string
+      details: {}
+      message:
+        example: Los datos proporcionados no son válidos
+        type: string
+    type: object
+  APIResponse:
+    description: Estructura de respuesta estándar de la API
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/APIError'
+      meta:
+        $ref: '#/definitions/Meta'
+      success:
+        example: true
+        type: boolean
+      timestamp:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+    type: object
   AuthResponse:
     description: Respuesta de autenticación exitosa con tokens
     properties:
@@ -67,6 +93,30 @@ definitions:
         description: Indica si la operación fue exitosa
         example: true
         type: boolean
+    type: object
+  Meta:
+    description: Metadatos de paginación y otros
+    properties:
+      count:
+        type: integer
+      pagination:
+        $ref: '#/definitions/PaginationMeta'
+    type: object
+  PaginationMeta:
+    description: Información de paginación
+    properties:
+      limit:
+        example: 10
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 100
+        type: integer
+      total_pages:
+        example: 10
+        type: integer
     type: object
   RefreshTokenRequest:
     description: Request para renovar access token usando refresh token
@@ -471,6 +521,84 @@ paths:
       summary: Register a new user
       tags:
       - Auth
+  /health:
+    get:
+      description: Verifica que la aplicación esté ejecutándose
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/APIResponse'
+            - properties:
+                data:
+                  properties:
+                    status:
+                      type: string
+                    timestamp:
+                      type: string
+                  type: object
+              type: object
+      summary: Health check básico
+      tags:
+      - Health
+  /live:
+    get:
+      description: Verifica que la aplicación esté viva (usado por Kubernetes)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/APIResponse'
+            - properties:
+                data:
+                  properties:
+                    status:
+                      type: string
+                  type: object
+              type: object
+      summary: Liveness check
+      tags:
+      - Health
+  /ready:
+    get:
+      description: Verifica que la aplicación y sus dependencias (DB) estén listas
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/APIResponse'
+            - properties:
+                data:
+                  properties:
+                    database:
+                      type: string
+                    status:
+                      type: string
+                    timestamp:
+                      type: string
+                  type: object
+              type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            allOf:
+            - $ref: '#/definitions/APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/APIError'
+              type: object
+      summary: Readiness check
+      tags:
+      - Health
 schemes:
 - http
 - https

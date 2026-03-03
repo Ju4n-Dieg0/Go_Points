@@ -1,0 +1,337 @@
+info:
+    contact:
+        email: support@gopoints.com
+        name: API Support
+        url: http://www.gopoints.com/support
+    description: |
+        API REST profesional para sistema de puntos de fidelización con arquitectura limpia.
+        Permite gestión de empresas, consumidores, productos, puntos y recompensas.
+
+        Características:
+        - Clean Architecture con separación de capas
+        - Autenticación JWT con tokens de acceso y refresco
+        - Sistema FIFO para redención de puntos
+        - Expiración automática de puntos
+        - Sistema de rangos (Bronze, Silver, Gold)
+        - Paginación, ordenamiento y filtros dinámicos
+        - Rate limiting y seguridad avanzada
+    license:
+        name: MIT
+        url: https://opensource.org/licenses/MIT
+    termsOfService: http://swagger.io/terms/
+    title: Go Points API
+    version: "1.0"
+paths:
+    /auth/login:
+        post:
+            consumes:
+                - application/json
+            description: |-
+                Autentica un usuario con email y contraseña.
+                Retorna access token (válido 15 min) y refresh token (válido 7 días).
+                El access token debe incluirse en el header Authorization como: Bearer {token}
+            parameters:
+                - description: Credenciales de inicio de sesión
+                  in: body
+                  name: request
+                  required: true
+                  schema:
+                    $ref: '#/definitions/LoginRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: Autenticación exitosa con tokens
+                    schema:
+                        $ref: '#/definitions/AuthResponse'
+                "400":
+                    description: Datos de entrada inválidos
+                    schema:
+                        $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+                "401":
+                    description: Credenciales incorrectas
+                    schema:
+                        $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+                "500":
+                    description: Error interno del servidor
+                    schema:
+                        $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+            summary: Login user
+            tags:
+                - Auth
+    /auth/logout:
+        post:
+            description: |-
+                Invalida la sesión del usuario autenticado.
+                Requiere autenticación con Bearer token en el header Authorization.
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: Sesión cerrada exitosamente
+                    schema:
+                        $ref: '#/definitions/MessageResponse'
+                "401":
+                    description: No autenticado o token inválido
+                    schema:
+                        $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+                "500":
+                    description: Error interno del servidor
+                    schema:
+                        $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+            security:
+                - BearerAuth: []
+            summary: Logout user
+            tags:
+                - Auth
+    /auth/password-reset/confirm:
+        post:
+            consumes:
+                - application/json
+            description: |-
+                Establece una nueva contraseña usando el token recibido por email.
+                El token es de un solo uso y tiene tiempo de expiración limitado.
+            parameters:
+                - description: Token y nueva contraseña
+                  in: body
+                  name: request
+                  required: true
+                  schema:
+                    $ref: '#/definitions/ConfirmPasswordResetRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: Contraseña actualizada exitosamente
+                    schema:
+                        $ref: '#/definitions/MessageResponse'
+                "400":
+                    description: Token inválido, expirado o contraseña débil
+                    schema:
+                        $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+                "500":
+                    description: Error interno del servidor
+                    schema:
+                        $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+            summary: Confirm password reset
+            tags:
+                - Auth
+    /auth/password-reset/request:
+        post:
+            consumes:
+                - application/json
+            description: |-
+                Envía un email con enlace para recuperar la contraseña.
+                Por seguridad, siempre retorna éxito aunque el email no exista.
+            parameters:
+                - description: Email del usuario
+                  in: body
+                  name: request
+                  required: true
+                  schema:
+                    $ref: '#/definitions/RequestPasswordResetRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: Solicitud procesada (email enviado si existe)
+                    schema:
+                        $ref: '#/definitions/MessageResponse'
+                "400":
+                    description: Email inválido
+                    schema:
+                        $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+                "500":
+                    description: Error interno del servidor
+                    schema:
+                        $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+            summary: Request password reset
+            tags:
+                - Auth
+    /auth/profile:
+        get:
+            description: |-
+                Obtiene la información del perfil del usuario autenticado.
+                Requiere autenticación con Bearer token en el header Authorization.
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: Información del usuario
+                    schema:
+                        $ref: '#/definitions/UserDTO'
+                "401":
+                    description: No autenticado o token inválido
+                    schema:
+                        $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+                "404":
+                    description: Usuario no encontrado
+                    schema:
+                        $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+                "500":
+                    description: Error interno del servidor
+                    schema:
+                        $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+            security:
+                - BearerAuth: []
+            summary: Get user profile
+            tags:
+                - Auth
+    /auth/refresh:
+        post:
+            consumes:
+                - application/json
+            description: |-
+                Genera un nuevo access token usando un refresh token válido.
+                Útil cuando el access token ha expirado pero el refresh token aún es válido.
+            parameters:
+                - description: Refresh token válido
+                  in: body
+                  name: request
+                  required: true
+                  schema:
+                    $ref: '#/definitions/RefreshTokenRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: Nuevo access token generado
+                    schema:
+                        $ref: '#/definitions/RefreshTokenResponse'
+                "400":
+                    description: Refresh token inválido o expirado
+                    schema:
+                        $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+                "401":
+                    description: No autorizado
+                    schema:
+                        $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+                "500":
+                    description: Error interno del servidor
+                    schema:
+                        $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+            summary: Refresh access token
+            tags:
+                - Auth
+    /auth/register:
+        post:
+            consumes:
+                - application/json
+            description: |-
+                Crea una nueva cuenta de usuario en el sistema. El email debe ser único.
+                Los roles disponibles son: SUPER_ADMIN, COMPANY (empresa), CONSUMER (consumidor).
+                La contraseña debe tener mínimo 8 caracteres.
+            parameters:
+                - description: Datos de registro del usuario
+                  in: body
+                  name: request
+                  required: true
+                  schema:
+                    $ref: '#/definitions/RegisterRequest'
+            produces:
+                - application/json
+            responses:
+                "201":
+                    description: Usuario registrado exitosamente con tokens
+                    schema:
+                        $ref: '#/definitions/AuthResponse'
+                "400":
+                    description: Datos de entrada inválidos
+                    schema:
+                        $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+                "409":
+                    description: El email ya está registrado
+                    schema:
+                        $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+                "500":
+                    description: Error interno del servidor
+                    schema:
+                        $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+            summary: Register a new user
+            tags:
+                - Auth
+    /health:
+        get:
+            description: Verifica que la aplicación esté ejecutándose
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        allOf:
+                            - $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_dto.APIResponse'
+                            - properties:
+                                data:
+                                    properties:
+                                        status:
+                                            type: string
+                                        timestamp:
+                                            type: string
+                                    type: object
+                              type: object
+            summary: Health check básico
+            tags:
+                - Health
+    /live:
+        get:
+            description: Verifica que la aplicación esté viva (usado por Kubernetes)
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        allOf:
+                            - $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_dto.APIResponse'
+                            - properties:
+                                data:
+                                    properties:
+                                        status:
+                                            type: string
+                                    type: object
+                              type: object
+            summary: Liveness check
+            tags:
+                - Health
+    /ready:
+        get:
+            description: Verifica que la aplicación y sus dependencias (DB) estén listas
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        allOf:
+                            - $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_dto.APIResponse'
+                            - properties:
+                                data:
+                                    properties:
+                                        database:
+                                            type: string
+                                        status:
+                                            type: string
+                                        timestamp:
+                                            type: string
+                                    type: object
+                              type: object
+                "503":
+                    description: Service Unavailable
+                    schema:
+                        allOf:
+                            - $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_dto.APIResponse'
+                            - properties:
+                                error:
+                                    $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_dto.APIError'
+                              type: object
+            summary: Readiness check
+            tags:
+                - Health
+servers:
+    - description: Development server
+      url: http://localhost:8080/api/v1
+    - description: Staging server
+      url: https://staging.gopoints.com/api/v1
+    - description: Production server
+      url: https://api.gopoints.com/api/v1

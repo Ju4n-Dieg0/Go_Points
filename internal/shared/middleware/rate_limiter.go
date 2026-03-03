@@ -53,7 +53,7 @@ func (rl *RateLimiter) getVisitor(ip string) *Visitor {
 }
 
 // isAllowed verifica si el visitor puede hacer una request
-func (v *Visitor) isAllowed(rate int, window time.Duration) bool {
+func (v *Visitor) isAllowed(rate int, window time.Duration) (bool, int, time.Time) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 
@@ -67,11 +67,11 @@ func (v *Visitor) isAllowed(rate int, window time.Duration) bool {
 
 	// Verificar si excedió el límite
 	if v.count >= rate {
-		return false
+		return false, rate - v.count, v.lastReset.Add(window)
 	}
 
 	v.count++
-	return true
+	return true, rate - v.count, v.lastReset.Add(window)
 }
 
 // cleanupVisitors elimina visitantes inactivos
@@ -98,9 +98,32 @@ func (rl *RateLimiter) Middleware() fiber.Handler {
 		ip := c.IP()
 		visitor := rl.getVisitor(ip)
 
-		if !visitor.isAllowed(rl.rate, rl.window) {
+		allowed, remaining, resetTime := visitor.isAllowed(rl.rate, rl.window)
+
+		// Agregar headers de rate limiting (RFC 6585)
+		c.Set("X-RateLimit-Limit", string(rune(rl.rate)))
+		c.Set("X-RateLimit-Remaining", string(rune(remaining)))
+		c.Set("X-RateLimit-Reset", resetTime.Format(time.RFC3339))
+
+		if !allowed {
+			retryAfter := int(time.Until(resetTime).Seconds())
+			if retryAfter < 0 {
+				retryAfter = 0
+			}
+			c.Set("Retry-After", string(rune(retryAfter)))
+			
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
-				"error": "Rate limit exceeded. Please try again later.",
+				"success": false,
+				"error": fiber.Map{
+					"code":    "RATE_LIMIT_EXCEEDED",
+					"message": "Has excedido el límite de solicitudes. Intenta nuevamente más tarde.",
+				},
+				"meta": fiber.Map{
+					"limit":      rl.rate,
+					"remaining":  0,
+					"reset":      resetTime.Format(time.RFC3339),
+					"retryAfter": retryAfter,
+				},
 			})
 		}
 

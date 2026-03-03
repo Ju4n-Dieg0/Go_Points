@@ -1,10 +1,11 @@
-.PHONY: help build run test clean docker-build docker-up docker-down migrate dev install lint
+.PHONY: help build run test clean docker-build docker-up docker-down migrate dev install lint swagger fmt coverage
 
 # Variables
 APP_NAME=go-points-api
 BINARY_NAME=server
 MAIN_PATH=./cmd/server
 DOCKER_COMPOSE=docker-compose
+VERSION=1.0.0
 
 # Default target
 help:
@@ -14,12 +15,16 @@ help:
 	@echo "  make run           - Run the application"
 	@echo "  make dev           - Run the application with auto-reload"
 	@echo "  make test          - Run tests"
+	@echo "  make coverage      - Run tests with coverage"
 	@echo "  make lint          - Run linters"
+	@echo "  make fmt           - Format code"
+	@echo "  make swagger       - Generate Swagger documentation"
 	@echo "  make clean         - Clean build artifacts"
 	@echo "  make docker-build  - Build Docker image"
 	@echo "  make docker-up     - Start services with Docker Compose"
 	@echo "  make docker-down   - Stop services with Docker Compose"
 	@echo "  make migrate       - Run database migrations"
+	@echo "  make all           - Run all checks (fmt, lint, test, build)"
 
 # Install dependencies
 install:
@@ -51,8 +56,14 @@ dev:
 # Run tests
 test:
 	@echo "Running tests..."
+	go test -v -race ./...
+
+# Run tests with coverage
+coverage:
+	@echo "Running tests with coverage..."
 	go test -v -race -coverprofile=coverage.out ./...
 	go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: coverage.html"
 
 # Run linters
 lint:
@@ -61,6 +72,16 @@ lint:
 		golangci-lint run --timeout=5m; \
 	else \
 		echo "golangci-lint not installed. Install from: https://golangci-lint.run/usage/install/"; \
+	fi
+
+# Generate Swagger documentation
+swagger:
+	@echo "Generating Swagger documentation..."
+	@if command -v swag > /dev/null; then \
+		swag init -g cmd/server/main.go -o docs --parseDependency --parseInternal; \
+		echo "Swagger documentation generated in /docs"; \
+	else \
+		echo "swag not installed. Install with: go install github.com/swaggo/swag/cmd/swag@latest"; \
 	fi
 
 # Clean build artifacts
@@ -117,6 +138,10 @@ fmt:
 vet:
 	@echo "Vetting code..."
 	go vet ./...
+
+# Run all checks
+all: fmt vet lint test build
+	@echo "All checks completed successfully!"
 
 # Run all checks
 check: fmt vet lint test

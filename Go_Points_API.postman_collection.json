@@ -1,0 +1,344 @@
+{
+  "info": {
+    "name": "Go Points API",
+    "description": "API REST profesional para sistema de puntos de fidelización",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Endpoints de autenticación y gestión de tokens",
+      "item": [
+        {
+          "name": "Register",
+          "url": {
+            "raw": "",
+            "host": null,
+            "path": null
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Juan Pérez\",\n  \"email\": \"juan@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"role\": \"consumer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Registrar un nuevo usuario en el sistema"
+          }
+        },
+        {
+          "name": "Login",
+          "url": {
+            "raw": "",
+            "host": null,
+            "path": null
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"juan@example.com\",\n  \"password\": \"SecurePass123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Iniciar sesión y obtener tokens JWT"
+          }
+        },
+        {
+          "name": "Get Profile",
+          "url": {
+            "raw": "",
+            "host": null,
+            "path": null
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "profile"
+              ]
+            },
+            "description": "Obtener perfil del usuario autenticado"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "url": {
+            "raw": "",
+            "host": null,
+            "path": null
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"your-refresh-token-here\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Renovar access token usando refresh token"
+          }
+        },
+        {
+          "name": "Logout",
+          "url": {
+            "raw": "",
+            "host": null,
+            "path": null
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Cerrar sesión (invalidar token)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Companies",
+      "description": "Gestión de empresas del sistema",
+      "item": [
+        {
+          "name": "Create Company",
+          "url": {
+            "raw": "",
+            "host": null,
+            "path": null
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Mi Empresa\",\n  \"description\": \"Descripción de la empresa\",\n  \"industry\": \"Retail\",\n  \"email\": \"contacto@miempresa.com\",\n  \"phone\": \"+573001234567\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/companies",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "companies"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Companies",
+          "url": {
+            "raw": "",
+            "host": null,
+            "path": null
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/companies?page=1\u0026pageSize=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "companies"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subscriptions",
+      "description": "Gestión de suscripciones de empresas"
+    },
+    {
+      "name": "Consumers",
+      "description": "Gestión de consumidores/clientes"
+    },
+    {
+      "name": "Products",
+      "description": "Gestión de productos de empresas"
+    },
+    {
+      "name": "Points",
+      "description": "Sistema de puntos (ganar, redimir, consultar saldo)"
+    },
+    {
+      "name": "Rewards",
+      "description": "Gestión de recompensas"
+    },
+    {
+      "name": "Health Checks",
+      "description": "Endpoints de salud del sistema",
+      "item": [
+        {
+          "name": "Health Check",
+          "url": {
+            "raw": "",
+            "host": null,
+            "path": null
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/health",
+              "host": [
+                "localhost:8080"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Verificar que la aplicación esté ejecutándose"
+          }
+        },
+        {
+          "name": "Readiness Check",
+          "url": {
+            "raw": "",
+            "host": null,
+            "path": null
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/ready",
+              "host": [
+                "localhost:8080"
+              ],
+              "path": [
+                "ready"
+              ]
+            },
+            "description": "Verificar que la aplicación esté lista (DB conectada)"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

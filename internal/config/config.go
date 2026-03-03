@@ -101,12 +101,6 @@ type SecurityConfig struct {
 }
 
 func Load() (*Config, error) {
-	viper.SetConfigName(".env")
-	viper.SetConfigType("env")
-	viper.AddConfigPath(".")
-	viper.AddConfigPath("./")
-	viper.AddConfigPath("../")
-
 	// Configurar para leer variables de entorno
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
@@ -114,12 +108,34 @@ func Load() (*Config, error) {
 	// Valores por defecto
 	setDefaults()
 
+	// Determinar el entorno
+	env := viper.GetString("APP_ENV")
+	if env == "" {
+		env = "development"
+	}
+
+	// Intentar cargar el archivo de configuración específico del entorno
+	configFile := fmt.Sprintf(".env.%s", env)
+	viper.SetConfigName(configFile)
+	viper.SetConfigType("env")
+	viper.AddConfigPath(".")
+	viper.AddConfigPath("./")
+	viper.AddConfigPath("../")
+
 	// Intentar leer el archivo de configuración (opcional)
 	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			return nil, fmt.Errorf("error reading config file: %w", err)
+		// Si no se encuentra el archivo específico del entorno, intentar con .env
+		viper.SetConfigName(".env")
+		if err := viper.ReadInConfig(); err != nil {
+			if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+				return nil, fmt.Errorf("error reading config file: %w", err)
+			}
+			log.Printf("No config file found (%s or .env), using environment variables and defaults\n", configFile)
+		} else {
+			log.Printf("Loaded config from .env (fallback)\n")
 		}
-		log.Println("No config file found, using environment variables and defaults")
+	} else {
+		log.Printf("Loaded config from %s\n", configFile)
 	}
 
 	config := &Config{

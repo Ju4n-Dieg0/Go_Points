@@ -88,6 +88,9 @@ import (
 // @tag.name Rewards
 // @tag.description Gestión de recompensas y caminos de recompensas
 //
+// @tag.name Health
+// @tag.description Endpoints de salud y monitoreo del sistema
+//
 // @x-logo {"url": "https://gopoints.com/logo.png", "altText": "Go Points Logo"}
 
 func main() {
@@ -177,12 +180,13 @@ func main() {
 	productHandler := handler.NewProductHandler(productSvc)
 	pointHandler := handler.NewPointHandler(pointSvc)
 	rewardHandler := handler.NewRewardHandler(rewardSvc)
+	healthHandler := handler.NewHealthHandler(db)
 
 	// Crear aplicación Fiber
 	app := createFiberApp(cfg)
 
 	// Configurar rutas
-	setupRoutes(app, db, authHandler, companyHandler, subscriptionHandler, consumerHandler, productHandler, pointHandler, rewardHandler, cfg)
+	setupRoutes(app, db, authHandler, companyHandler, subscriptionHandler, consumerHandler, productHandler, pointHandler, rewardHandler, healthHandler, cfg)
 
 	// Iniciar servidor en una goroutine
 	go func() {
@@ -249,25 +253,13 @@ func setupRoutes(
 	productHandler *handler.ProductHandler,
 	pointHandler *handler.PointHandler,
 	rewardHandler *handler.RewardHandler,
+	healthHandler *handler.HealthHandler,
 	cfg *config.Config,
 ) {
-	// Health check endpoint
-	app.Get("/health", func(c fiber.Ctx) error {
-		// Verificar estado de la base de datos
-		if err := db.HealthCheck(); err != nil {
-			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
-				"status":   "error",
-				"database": "unhealthy",
-				"error":    err.Error(),
-			})
-		}
-
-		return c.JSON(fiber.Map{
-			"status":    "ok",
-			"database":  "healthy",
-			"timestamp": time.Now().UTC().Format(time.RFC3339),
-		})
-	})
+	// Health check endpoints (sin versionado, para k8s/docker)
+	app.Get("/health", healthHandler.HealthCheck)
+	app.Get("/ready", healthHandler.ReadinessCheck)
+	app.Get("/live", healthHandler.LivenessCheck)
 
 	// Swagger documentation
 	app.Get("/docs/*", swagger.New())
@@ -278,9 +270,12 @@ func setupRoutes(
 	// Ruta de bienvenida
 	api.Get("/", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{
-			"message": "Welcome to Go Points API",
-			"version": "1.0.0",
-			"status":  "running",
+			"success": true,
+			"data": fiber.Map{
+				"message": "Welcome to Go Points API",
+				"version": "1.0.0",
+				"status":  "running",
+			},
 		})
 	})
 
