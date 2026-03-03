@@ -1,0 +1,484 @@
+basePath: /api/v1
+definitions:
+  AuthResponse:
+    description: Respuesta de autenticación exitosa con tokens
+    properties:
+      access_token:
+        description: Access token JWT
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      expires_in:
+        description: Tiempo de expiración en segundos
+        example: 900
+        type: integer
+      refresh_token:
+        description: Refresh token JWT
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      token_type:
+        description: Tipo de token (siempre Bearer)
+        example: Bearer
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/UserDTO'
+        description: Datos del usuario autenticado
+    type: object
+  ConfirmPasswordResetRequest:
+    description: Request para confirmar recuperación de contraseña con token
+    properties:
+      new_password:
+        description: Nueva contraseña (mínimo 8 caracteres)
+        example: NewSecurePass123!
+        maxLength: 100
+        minLength: 8
+        type: string
+      token:
+        description: Token de recuperación recibido por email
+        example: abc123def456
+        type: string
+    required:
+    - new_password
+    - token
+    type: object
+  LoginRequest:
+    description: Request para autenticación de usuario
+    properties:
+      email:
+        description: Email del usuario
+        example: user@example.com
+        type: string
+      password:
+        description: Contraseña del usuario
+        example: SecurePass123!
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  MessageResponse:
+    description: Respuesta con mensaje simple de éxito/error
+    properties:
+      message:
+        description: Mensaje descriptivo
+        example: Operation completed successfully
+        type: string
+      success:
+        description: Indica si la operación fue exitosa
+        example: true
+        type: boolean
+    type: object
+  RefreshTokenRequest:
+    description: Request para renovar access token usando refresh token
+    properties:
+      refresh_token:
+        description: Refresh token válido
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    required:
+    - refresh_token
+    type: object
+  RefreshTokenResponse:
+    description: Respuesta con nuevo access token
+    properties:
+      access_token:
+        description: Nuevo access token JWT
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      expires_in:
+        description: Tiempo de expiración en segundos
+        example: 900
+        type: integer
+      token_type:
+        description: Tipo de token (siempre Bearer)
+        example: Bearer
+        type: string
+    type: object
+  RegisterRequest:
+    description: Request para registro de nuevo usuario
+    properties:
+      email:
+        description: Email del usuario (único)
+        example: user@example.com
+        maxLength: 255
+        type: string
+      first_name:
+        description: Nombre del usuario
+        example: John
+        maxLength: 100
+        minLength: 2
+        type: string
+      last_name:
+        description: Apellido del usuario
+        example: Doe
+        maxLength: 100
+        minLength: 2
+        type: string
+      password:
+        description: Contraseña (mínimo 8 caracteres)
+        example: SecurePass123!
+        maxLength: 100
+        minLength: 8
+        type: string
+      role:
+        allOf:
+        - $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_domain_auth.Role'
+        description: Rol del usuario
+        enum:
+        - SUPER_ADMIN
+        - COMPANY
+        - CONSUMER
+        example: COMPANY
+    required:
+    - email
+    - first_name
+    - last_name
+    - password
+    - role
+    type: object
+  RequestPasswordResetRequest:
+    description: Request para solicitar recuperación de contraseña
+    properties:
+      email:
+        description: Email del usuario
+        example: user@example.com
+        type: string
+    required:
+    - email
+    type: object
+  UserDTO:
+    description: Información del usuario (sin datos sensibles)
+    properties:
+      created_at:
+        description: Fecha de creación
+        example: "2026-03-01T10:00:00Z"
+        type: string
+      email:
+        description: Email del usuario
+        example: user@example.com
+        type: string
+      first_name:
+        description: Nombre del usuario
+        example: John
+        type: string
+      id:
+        description: ID único del usuario
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      is_active:
+        description: Indica si el usuario está activo
+        example: true
+        type: boolean
+      is_email_verified:
+        description: Indica si el email está verificado
+        example: false
+        type: boolean
+      last_login_at:
+        description: Fecha y hora del último login
+        example: "2026-03-02T15:04:05Z"
+        type: string
+      last_name:
+        description: Apellido del usuario
+        example: Doe
+        type: string
+      role:
+        allOf:
+        - $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_domain_auth.Role'
+        description: Rol del usuario
+        enum:
+        - SUPER_ADMIN
+        - COMPANY
+        - CONSUMER
+        example: COMPANY
+      updated_at:
+        description: Fecha de última actualización
+        example: "2026-03-02T14:30:00Z"
+        type: string
+    type: object
+  github_com_Ju4n-Dieg0_Go_Points_internal_domain_auth.Role:
+    enum:
+    - SUPER_ADMIN
+    - COMPANY
+    - CONSUMER
+    type: string
+    x-enum-varnames:
+    - RoleSuperAdmin
+    - RoleCompany
+    - RoleConsumer
+  github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse:
+    properties:
+      details:
+        additionalProperties:
+          type: string
+        type: object
+      error:
+        type: string
+      success:
+        type: boolean
+      type:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@gopoints.com
+    name: API Support
+    url: http://www.gopoints.com/support
+  description: |
+    API REST profesional para sistema de puntos de fidelización con arquitectura limpia.
+    Permite gestión de empresas, consumidores, productos, puntos y recompensas.
+
+    Características:
+    - Clean Architecture con separación de capas
+    - Autenticación JWT con tokens de acceso y refresco
+    - Sistema FIFO para redención de puntos
+    - Expiración automática de puntos
+    - Sistema de rangos (Bronze, Silver, Gold)
+    - Paginación, ordenamiento y filtros dinámicos
+    - Rate limiting y seguridad avanzada
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Go Points API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Autentica un usuario con email y contraseña.
+        Retorna access token (válido 15 min) y refresh token (válido 7 días).
+        El access token debe incluirse en el header Authorization como: Bearer {token}
+      parameters:
+      - description: Credenciales de inicio de sesión
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Autenticación exitosa con tokens
+          schema:
+            $ref: '#/definitions/AuthResponse'
+        "400":
+          description: Datos de entrada inválidos
+          schema:
+            $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+        "401":
+          description: Credenciales incorrectas
+          schema:
+            $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+        "500":
+          description: Error interno del servidor
+          schema:
+            $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+      summary: Login user
+      tags:
+      - Auth
+  /auth/logout:
+    post:
+      description: |-
+        Invalida la sesión del usuario autenticado.
+        Requiere autenticación con Bearer token en el header Authorization.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sesión cerrada exitosamente
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "401":
+          description: No autenticado o token inválido
+          schema:
+            $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+        "500":
+          description: Error interno del servidor
+          schema:
+            $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Logout user
+      tags:
+      - Auth
+  /auth/password-reset/confirm:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Establece una nueva contraseña usando el token recibido por email.
+        El token es de un solo uso y tiene tiempo de expiración limitado.
+      parameters:
+      - description: Token y nueva contraseña
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ConfirmPasswordResetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Contraseña actualizada exitosamente
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "400":
+          description: Token inválido, expirado o contraseña débil
+          schema:
+            $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+        "500":
+          description: Error interno del servidor
+          schema:
+            $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+      summary: Confirm password reset
+      tags:
+      - Auth
+  /auth/password-reset/request:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Envía un email con enlace para recuperar la contraseña.
+        Por seguridad, siempre retorna éxito aunque el email no exista.
+      parameters:
+      - description: Email del usuario
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/RequestPasswordResetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Solicitud procesada (email enviado si existe)
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "400":
+          description: Email inválido
+          schema:
+            $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+        "500":
+          description: Error interno del servidor
+          schema:
+            $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+      summary: Request password reset
+      tags:
+      - Auth
+  /auth/profile:
+    get:
+      description: |-
+        Obtiene la información del perfil del usuario autenticado.
+        Requiere autenticación con Bearer token en el header Authorization.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Información del usuario
+          schema:
+            $ref: '#/definitions/UserDTO'
+        "401":
+          description: No autenticado o token inválido
+          schema:
+            $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+        "404":
+          description: Usuario no encontrado
+          schema:
+            $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+        "500":
+          description: Error interno del servidor
+          schema:
+            $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Genera un nuevo access token usando un refresh token válido.
+        Útil cuando el access token ha expirado pero el refresh token aún es válido.
+      parameters:
+      - description: Refresh token válido
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Nuevo access token generado
+          schema:
+            $ref: '#/definitions/RefreshTokenResponse'
+        "400":
+          description: Refresh token inválido o expirado
+          schema:
+            $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+        "401":
+          description: No autorizado
+          schema:
+            $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+        "500":
+          description: Error interno del servidor
+          schema:
+            $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+      summary: Refresh access token
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Crea una nueva cuenta de usuario en el sistema. El email debe ser único.
+        Los roles disponibles son: SUPER_ADMIN, COMPANY (empresa), CONSUMER (consumidor).
+        La contraseña debe tener mínimo 8 caracteres.
+      parameters:
+      - description: Datos de registro del usuario
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Usuario registrado exitosamente con tokens
+          schema:
+            $ref: '#/definitions/AuthResponse'
+        "400":
+          description: Datos de entrada inválidos
+          schema:
+            $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+        "409":
+          description: El email ya está registrado
+          schema:
+            $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+        "500":
+          description: Error interno del servidor
+          schema:
+            $ref: '#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse'
+      summary: Register a new user
+      tags:
+      - Auth
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+    x-logo: '{"url": "https://gopoints.com/logo.png", "altText": "Go Points Logo"}'
+swagger: "2.0"

@@ -7,71 +7,111 @@ import (
 )
 
 // RegisterRequest DTO para registro de usuario
+// @Description Request para registro de nuevo usuario
 type RegisterRequest struct {
-	Email     string `json:"email" validate:"required,email,max=255"`
-	Password  string `json:"password" validate:"required,min=8,max=100"`
-	FirstName string `json:"first_name" validate:"required,min=2,max=100"`
-	LastName  string `json:"last_name" validate:"required,min=2,max=100"`
-	Role      Role   `json:"role" validate:"required,oneof=SUPER_ADMIN COMPANY CONSUMER"`
-}
+	// Email del usuario (único)
+	Email string `json:"email" validate:"required,email,max=255" example:"user@example.com"`
+	// Contraseña (mínimo 8 caracteres)
+	Password string `json:"password" validate:"required,min=8,max=100" example:"SecurePass123!"`
+	// Nombre del usuario
+	FirstName string `json:"first_name" validate:"required,min=2,max=100" example:"John"`
+	// Apellido del usuario
+	LastName string `json:"last_name" validate:"required,min=2,max=100" example:"Doe"`
+	// Rol del usuario
+	Role Role `json:"role" validate:"required,oneof=SUPER_ADMIN COMPANY CONSUMER" enums:"SUPER_ADMIN,COMPANY,CONSUMER" example:"COMPANY"`
+} // @name RegisterRequest
 
 // LoginRequest DTO para inicio de sesión
+// @Description Request para autenticación de usuario
 type LoginRequest struct {
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required"`
-}
+	// Email del usuario
+	Email string `json:"email" validate:"required,email" example:"user@example.com"`
+	// Contraseña del usuario
+	Password string `json:"password" validate:"required" example:"SecurePass123!"`
+} // @name LoginRequest
 
 // RefreshTokenRequest DTO para refrescar token
+// @Description Request para renovar access token usando refresh token
 type RefreshTokenRequest struct {
-	RefreshToken string `json:"refresh_token" validate:"required"`
-}
+	// Refresh token válido
+	RefreshToken string `json:"refresh_token" validate:"required" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+} // @name RefreshTokenRequest
 
 // RequestPasswordResetRequest DTO para solicitar reset de contraseña
+// @Description Request para solicitar recuperación de contraseña
 type RequestPasswordResetRequest struct {
-	Email string `json:"email" validate:"required,email"`
-}
+	// Email del usuario
+	Email string `json:"email" validate:"required,email" example:"user@example.com"`
+} // @name RequestPasswordResetRequest
 
 // ConfirmPasswordResetRequest DTO para confirmar reset de contraseña
+// @Description Request para confirmar recuperación de contraseña con token
 type ConfirmPasswordResetRequest struct {
-	Token       string `json:"token" validate:"required"`
-	NewPassword string `json:"new_password" validate:"required,min=8,max=100"`
-}
+	// Token de recuperación recibido por email
+	Token string `json:"token" validate:"required" example:"abc123def456"`
+	// Nueva contraseña (mínimo 8 caracteres)
+	NewPassword string `json:"new_password" validate:"required,min=8,max=100" example:"NewSecurePass123!"`
+} // @name ConfirmPasswordResetRequest
 
 // AuthResponse DTO para respuesta de autenticación exitosa
+// @Description Respuesta de autenticación exitosa con tokens
 type AuthResponse struct {
-	AccessToken  string    `json:"access_token"`
-	RefreshToken string    `json:"refresh_token"`
-	TokenType    string    `json:"token_type"`
-	ExpiresIn    int       `json:"expires_in"`
-	User         UserDTO   `json:"user"`
-}
+	// Access token JWT
+	AccessToken string `json:"access_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+	// Refresh token JWT
+	RefreshToken string `json:"refresh_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+	// Tipo de token (siempre Bearer)
+	TokenType string `json:"token_type" example:"Bearer"`
+	// Tiempo de expiración en segundos
+	ExpiresIn int `json:"expires_in" example:"900"`
+	// Datos del usuario autenticado
+	User UserDTO `json:"user"`
+} // @name AuthResponse
 
 // RefreshTokenResponse DTO para respuesta de refresh token
+// @Description Respuesta con nuevo access token
 type RefreshTokenResponse struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	ExpiresIn   int    `json:"expires_in"`
-}
+	// Nuevo access token JWT
+	AccessToken string `json:"access_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+	// Tipo de token (siempre Bearer)
+	TokenType string `json:"token_type" example:"Bearer"`
+	// Tiempo de expiración en segundos
+	ExpiresIn int `json:"expires_in" example:"900"`
+} // @name RefreshTokenResponse
 
 // UserDTO DTO para representar usuario sin información sensible
+// @Description Información del usuario (sin datos sensibles)
 type UserDTO struct {
-	ID              uuid.UUID  `json:"id"`
-	Email           string     `json:"email"`
-	FirstName       string     `json:"first_name"`
-	LastName        string     `json:"last_name"`
-	Role            Role       `json:"role"`
-	IsActive        bool       `json:"is_active"`
-	IsEmailVerified bool       `json:"is_email_verified"`
-	LastLoginAt     *time.Time `json:"last_login_at,omitempty"`
-	CreatedAt       time.Time  `json:"created_at"`
-	UpdatedAt       time.Time  `json:"updated_at"`
-}
+	// ID único del usuario
+	ID uuid.UUID `json:"id" example:"123e4567-e89b-12d3-a456-426614174000"`
+	// Email del usuario
+	Email string `json:"email" example:"user@example.com"`
+	// Nombre del usuario
+	FirstName string `json:"first_name" example:"John"`
+	// Apellido del usuario
+	LastName string `json:"last_name" example:"Doe"`
+	// Rol del usuario
+	Role Role `json:"role" enums:"SUPER_ADMIN,COMPANY,CONSUMER" example:"COMPANY"`
+	// Indica si el usuario está activo
+	IsActive bool `json:"is_active" example:"true"`
+	// Indica si el email está verificado
+	IsEmailVerified bool `json:"is_email_verified" example:"false"`
+	// Fecha y hora del último login
+	LastLoginAt *time.Time `json:"last_login_at,omitempty" example:"2026-03-02T15:04:05Z"`
+	// Fecha de creación
+	CreatedAt time.Time `json:"created_at" example:"2026-03-01T10:00:00Z"`
+	// Fecha de última actualización
+	UpdatedAt time.Time `json:"updated_at" example:"2026-03-02T14:30:00Z"`
+} // @name UserDTO
 
 // MessageResponse DTO para respuestas de mensajes simples
+// @Description Respuesta con mensaje simple de éxito/error
 type MessageResponse struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
-}
+	// Indica si la operación fue exitosa
+	Success bool `json:"success" example:"true"`
+	// Mensaje descriptivo
+	Message string `json:"message" example:"Operation completed successfully"`
+} // @name MessageResponse
 
 // ToUserDTO convierte User entity a UserDTO
 func ToUserDTO(user *User) UserDTO {

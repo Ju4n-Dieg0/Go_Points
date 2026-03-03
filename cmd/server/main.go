@@ -33,7 +33,62 @@ import (
 	"github.com/Ju4n-Dieg0/Go_Points/internal/shared/middleware"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/shared/notifications"
 	"github.com/gofiber/fiber/v3"
+	
+	_ "github.com/Ju4n-Dieg0/Go_Points/docs" // Swagger docs
+	"github.com/gofiber/swagger"
 )
+
+// @title Go Points API
+// @version 1.0
+// @description API REST profesional para sistema de puntos de fidelización con arquitectura limpia.
+// @description Permite gestión de empresas, consumidores, productos, puntos y recompensas.
+// @description
+// @description Características:
+// @description - Clean Architecture con separación de capas
+// @description - Autenticación JWT con tokens de acceso y refresco
+// @description - Sistema FIFO para redención de puntos
+// @description - Expiración automática de puntos
+// @description - Sistema de rangos (Bronze, Silver, Gold)
+// @description - Paginación, ordenamiento y filtros dinámicos
+// @description - Rate limiting y seguridad avanzada
+// @description
+// @termsOfService http://swagger.io/terms/
+// @contact.name API Support
+// @contact.url http://www.gopoints.com/support
+// @contact.email support@gopoints.com
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+// @host localhost:8080
+// @BasePath /api/v1
+// @schemes http https
+//
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
+//
+// @tag.name Auth
+// @tag.description Endpoints de autenticación y gestión de tokens
+//
+// @tag.name Companies
+// @tag.description Gestión de empresas del sistema
+//
+// @tag.name Subscriptions
+// @tag.description Gestión de suscripciones de empresas
+//
+// @tag.name Consumers
+// @tag.description Gestión de consumidores/clientes
+//
+// @tag.name Products
+// @tag.description Gestión de productos de empresas
+//
+// @tag.name Points
+// @tag.description Sistema de puntos (ganar, redimir, consultar saldo)
+//
+// @tag.name Rewards
+// @tag.description Gestión de recompensas y caminos de recompensas
+//
+// @x-logo {"url": "https://gopoints.com/logo.png", "altText": "Go Points Logo"}
 
 func main() {
 	// Cargar configuración
@@ -213,6 +268,9 @@ func setupRoutes(
 			"timestamp": time.Now().UTC().Format(time.RFC3339),
 		})
 	})
+
+	// Swagger documentation
+	app.Get("/docs/*", swagger.New())
 
 	// API v1 routes group
 	api := app.Group("/api/v1")

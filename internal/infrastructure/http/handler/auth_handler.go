@@ -25,13 +25,17 @@ func NewAuthHandler(service auth.Service) *AuthHandler {
 
 // Register maneja el registro de nuevos usuarios
 // @Summary Register a new user
-// @Tags auth
+// @Description Crea una nueva cuenta de usuario en el sistema. El email debe ser único.
+// @Description Los roles disponibles son: SUPER_ADMIN, COMPANY (empresa), CONSUMER (consumidor).
+// @Description La contraseña debe tener mínimo 8 caracteres.
+// @Tags Auth
 // @Accept json
 // @Produce json
-// @Param request body domainAuth.RegisterRequest true "Register Request"
-// @Success 201 {object} domainAuth.AuthResponse
-// @Failure 400 {object} errors.ErrorResponse
-// @Failure 409 {object} errors.ErrorResponse
+// @Param request body domainAuth.RegisterRequest true "Datos de registro del usuario"
+// @Success 201 {object} domainAuth.AuthResponse "Usuario registrado exitosamente con tokens"
+// @Failure 400 {object} errors.ErrorResponse "Datos de entrada inválidos"
+// @Failure 409 {object} errors.ErrorResponse "El email ya está registrado"
+// @Failure 500 {object} errors.ErrorResponse "Error interno del servidor"
 // @Router /auth/register [post]
 func (h *AuthHandler) Register(c fiber.Ctx) error {
 	var req domainAuth.RegisterRequest
@@ -57,13 +61,17 @@ func (h *AuthHandler) Register(c fiber.Ctx) error {
 
 // Login maneja el inicio de sesión
 // @Summary Login user
-// @Tags auth
+// @Description Autentica un usuario con email y contraseña.
+// @Description Retorna access token (válido 15 min) y refresh token (válido 7 días).
+// @Description El access token debe incluirse en el header Authorization como: Bearer {token}
+// @Tags Auth
 // @Accept json
 // @Produce json
-// @Param request body domainAuth.LoginRequest true "Login Request"
-// @Success 200 {object} domainAuth.AuthResponse
-// @Failure 400 {object} errors.ErrorResponse
-// @Failure 401 {object} errors.ErrorResponse
+// @Param request body domainAuth.LoginRequest true "Credenciales de inicio de sesión"
+// @Success 200 {object} domainAuth.AuthResponse "Autenticación exitosa con tokens"
+// @Failure 400 {object} errors.ErrorResponse "Datos de entrada inválidos"
+// @Failure 401 {object} errors.ErrorResponse "Credenciales incorrectas"
+// @Failure 500 {object} errors.ErrorResponse "Error interno del servidor"
 // @Router /auth/login [post]
 func (h *AuthHandler) Login(c fiber.Ctx) error {
 	var req domainAuth.LoginRequest
@@ -89,13 +97,16 @@ func (h *AuthHandler) Login(c fiber.Ctx) error {
 
 // RefreshToken maneja la renovación del access token
 // @Summary Refresh access token
-// @Tags auth
+// @Description Genera un nuevo access token usando un refresh token válido.
+// @Description Útil cuando el access token ha expirado pero el refresh token aún es válido.
+// @Tags Auth
 // @Accept json
 // @Produce json
-// @Param request body domainAuth.RefreshTokenRequest true "Refresh Token Request"
-// @Success 200 {object} domainAuth.RefreshTokenResponse
-// @Failure 400 {object} errors.ErrorResponse
-// @Failure 401 {object} errors.ErrorResponse
+// @Param request body domainAuth.RefreshTokenRequest true "Refresh token válido"
+// @Success 200 {object} domainAuth.RefreshTokenResponse "Nuevo access token generado"
+// @Failure 400 {object} errors.ErrorResponse "Refresh token inválido o expirado"
+// @Failure 401 {object} errors.ErrorResponse "No autorizado"
+// @Failure 500 {object} errors.ErrorResponse "Error interno del servidor"
 // @Router /auth/refresh [post]
 func (h *AuthHandler) RefreshToken(c fiber.Ctx) error {
 	var req domainAuth.RefreshTokenRequest
@@ -121,11 +132,14 @@ func (h *AuthHandler) RefreshToken(c fiber.Ctx) error {
 
 // Logout maneja el cierre de sesión
 // @Summary Logout user
-// @Tags auth
+// @Description Invalida la sesión del usuario autenticado.
+// @Description Requiere autenticación con Bearer token en el header Authorization.
+// @Tags Auth
 // @Security BearerAuth
 // @Produce json
-// @Success 200 {object} domainAuth.MessageResponse
-// @Failure 401 {object} errors.ErrorResponse
+// @Success 200 {object} domainAuth.MessageResponse "Sesión cerrada exitosamente"
+// @Failure 401 {object} errors.ErrorResponse "No autenticado o token inválido"
+// @Failure 500 {object} errors.ErrorResponse "Error interno del servidor"
 // @Router /auth/logout [post]
 func (h *AuthHandler) Logout(c fiber.Ctx) error {
 	// Get user ID from context
@@ -147,12 +161,15 @@ func (h *AuthHandler) Logout(c fiber.Ctx) error {
 
 // RequestPasswordReset maneja la solicitud de reset de contraseña
 // @Summary Request password reset
-// @Tags auth
+// @Description Envía un email con enlace para recuperar la contraseña.
+// @Description Por seguridad, siempre retorna éxito aunque el email no exista.
+// @Tags Auth
 // @Accept json
 // @Produce json
-// @Param request body domainAuth.RequestPasswordResetRequest true "Request Password Reset"
-// @Success 200 {object} domainAuth.MessageResponse
-// @Failure 400 {object} errors.ErrorResponse
+// @Param request body domainAuth.RequestPasswordResetRequest true "Email del usuario"
+// @Success 200 {object} domainAuth.MessageResponse "Solicitud procesada (email enviado si existe)"
+// @Failure 400 {object} errors.ErrorResponse "Email inválido"
+// @Failure 500 {object} errors.ErrorResponse "Error interno del servidor"
 // @Router /auth/password-reset/request [post]
 func (h *AuthHandler) RequestPasswordReset(c fiber.Ctx) error {
 	var req domainAuth.RequestPasswordResetRequest
@@ -180,12 +197,15 @@ func (h *AuthHandler) RequestPasswordReset(c fiber.Ctx) error {
 
 // ConfirmPasswordReset maneja la confirmación del reset de contraseña
 // @Summary Confirm password reset
-// @Tags auth
+// @Description Establece una nueva contraseña usando el token recibido por email.
+// @Description El token es de un solo uso y tiene tiempo de expiración limitado.
+// @Tags Auth
 // @Accept json
 // @Produce json
-// @Param request body domainAuth.ConfirmPasswordResetRequest true "Confirm Password Reset"
-// @Success 200 {object} domainAuth.MessageResponse
-// @Failure 400 {object} errors.ErrorResponse
+// @Param request body domainAuth.ConfirmPasswordResetRequest true "Token y nueva contraseña"
+// @Success 200 {object} domainAuth.MessageResponse "Contraseña actualizada exitosamente"
+// @Failure 400 {object} errors.ErrorResponse "Token inválido, expirado o contraseña débil"
+// @Failure 500 {object} errors.ErrorResponse "Error interno del servidor"
 // @Router /auth/password-reset/confirm [post]
 func (h *AuthHandler) ConfirmPasswordReset(c fiber.Ctx) error {
 	var req domainAuth.ConfirmPasswordResetRequest
@@ -213,11 +233,15 @@ func (h *AuthHandler) ConfirmPasswordReset(c fiber.Ctx) error {
 
 // GetProfile obtiene el perfil del usuario autenticado
 // @Summary Get user profile
-// @Tags auth
+// @Description Obtiene la información del perfil del usuario autenticado.
+// @Description Requiere autenticación con Bearer token en el header Authorization.
+// @Tags Auth
 // @Security BearerAuth
 // @Produce json
-// @Success 200 {object} domainAuth.UserDTO
-// @Failure 401 {object} errors.ErrorResponse
+// @Success 200 {object} domainAuth.UserDTO "Información del usuario"
+// @Failure 401 {object} errors.ErrorResponse "No autenticado o token inválido"
+// @Failure 404 {object} errors.ErrorResponse "Usuario no encontrado"
+// @Failure 500 {object} errors.ErrorResponse "Error interno del servidor"
 // @Router /auth/profile [get]
 func (h *AuthHandler) GetProfile(c fiber.Ctx) error {
 	// Get user ID from context

@@ -1,0 +1,658 @@
+{
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "API REST profesional para sistema de puntos de fidelización con arquitectura limpia.\nPermite gestión de empresas, consumidores, productos, puntos y recompensas.\n\nCaracterísticas:\n- Clean Architecture con separación de capas\n- Autenticación JWT con tokens de acceso y refresco\n- Sistema FIFO para redención de puntos\n- Expiración automática de puntos\n- Sistema de rangos (Bronze, Silver, Gold)\n- Paginación, ordenamiento y filtros dinámicos\n- Rate limiting y seguridad avanzada\n",
+        "title": "Go Points API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.gopoints.com/support",
+            "email": "support@gopoints.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api/v1",
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "description": "Autentica un usuario con email y contraseña.\nRetorna access token (válido 15 min) y refresh token (válido 7 días).\nEl access token debe incluirse en el header Authorization como: Bearer {token}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Login user",
+                "parameters": [
+                    {
+                        "description": "Credenciales de inicio de sesión",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Autenticación exitosa con tokens",
+                        "schema": {
+                            "$ref": "#/definitions/AuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Datos de entrada inválidos",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Credenciales incorrectas",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Invalida la sesión del usuario autenticado.\nRequiere autenticación con Bearer token en el header Authorization.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Logout user",
+                "responses": {
+                    "200": {
+                        "description": "Sesión cerrada exitosamente",
+                        "schema": {
+                            "$ref": "#/definitions/MessageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "No autenticado o token inválido",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/password-reset/confirm": {
+            "post": {
+                "description": "Establece una nueva contraseña usando el token recibido por email.\nEl token es de un solo uso y tiene tiempo de expiración limitado.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Confirm password reset",
+                "parameters": [
+                    {
+                        "description": "Token y nueva contraseña",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ConfirmPasswordResetRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Contraseña actualizada exitosamente",
+                        "schema": {
+                            "$ref": "#/definitions/MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Token inválido, expirado o contraseña débil",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/password-reset/request": {
+            "post": {
+                "description": "Envía un email con enlace para recuperar la contraseña.\nPor seguridad, siempre retorna éxito aunque el email no exista.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Request password reset",
+                "parameters": [
+                    {
+                        "description": "Email del usuario",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/RequestPasswordResetRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Solicitud procesada (email enviado si existe)",
+                        "schema": {
+                            "$ref": "#/definitions/MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Email inválido",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/profile": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Obtiene la información del perfil del usuario autenticado.\nRequiere autenticación con Bearer token en el header Authorization.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Get user profile",
+                "responses": {
+                    "200": {
+                        "description": "Información del usuario",
+                        "schema": {
+                            "$ref": "#/definitions/UserDTO"
+                        }
+                    },
+                    "401": {
+                        "description": "No autenticado o token inválido",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Usuario no encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "description": "Genera un nuevo access token usando un refresh token válido.\nÚtil cuando el access token ha expirado pero el refresh token aún es válido.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Refresh access token",
+                "parameters": [
+                    {
+                        "description": "Refresh token válido",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/RefreshTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Nuevo access token generado",
+                        "schema": {
+                            "$ref": "#/definitions/RefreshTokenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Refresh token inválido o expirado",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "No autorizado",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "description": "Crea una nueva cuenta de usuario en el sistema. El email debe ser único.\nLos roles disponibles son: SUPER_ADMIN, COMPANY (empresa), CONSUMER (consumidor).\nLa contraseña debe tener mínimo 8 caracteres.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Register a new user",
+                "parameters": [
+                    {
+                        "description": "Datos de registro del usuario",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Usuario registrado exitosamente con tokens",
+                        "schema": {
+                            "$ref": "#/definitions/AuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Datos de entrada inválidos",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "El email ya está registrado",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "AuthResponse": {
+            "description": "Respuesta de autenticación exitosa con tokens",
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "description": "Access token JWT",
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                },
+                "expires_in": {
+                    "description": "Tiempo de expiración en segundos",
+                    "type": "integer",
+                    "example": 900
+                },
+                "refresh_token": {
+                    "description": "Refresh token JWT",
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                },
+                "token_type": {
+                    "description": "Tipo de token (siempre Bearer)",
+                    "type": "string",
+                    "example": "Bearer"
+                },
+                "user": {
+                    "description": "Datos del usuario autenticado",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/UserDTO"
+                        }
+                    ]
+                }
+            }
+        },
+        "ConfirmPasswordResetRequest": {
+            "description": "Request para confirmar recuperación de contraseña con token",
+            "type": "object",
+            "required": [
+                "new_password",
+                "token"
+            ],
+            "properties": {
+                "new_password": {
+                    "description": "Nueva contraseña (mínimo 8 caracteres)",
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 8,
+                    "example": "NewSecurePass123!"
+                },
+                "token": {
+                    "description": "Token de recuperación recibido por email",
+                    "type": "string",
+                    "example": "abc123def456"
+                }
+            }
+        },
+        "LoginRequest": {
+            "description": "Request para autenticación de usuario",
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "description": "Email del usuario",
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "password": {
+                    "description": "Contraseña del usuario",
+                    "type": "string",
+                    "example": "SecurePass123!"
+                }
+            }
+        },
+        "MessageResponse": {
+            "description": "Respuesta con mensaje simple de éxito/error",
+            "type": "object",
+            "properties": {
+                "message": {
+                    "description": "Mensaje descriptivo",
+                    "type": "string",
+                    "example": "Operation completed successfully"
+                },
+                "success": {
+                    "description": "Indica si la operación fue exitosa",
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "RefreshTokenRequest": {
+            "description": "Request para renovar access token usando refresh token",
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "description": "Refresh token válido",
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+            }
+        },
+        "RefreshTokenResponse": {
+            "description": "Respuesta con nuevo access token",
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "description": "Nuevo access token JWT",
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                },
+                "expires_in": {
+                    "description": "Tiempo de expiración en segundos",
+                    "type": "integer",
+                    "example": 900
+                },
+                "token_type": {
+                    "description": "Tipo de token (siempre Bearer)",
+                    "type": "string",
+                    "example": "Bearer"
+                }
+            }
+        },
+        "RegisterRequest": {
+            "description": "Request para registro de nuevo usuario",
+            "type": "object",
+            "required": [
+                "email",
+                "first_name",
+                "last_name",
+                "password",
+                "role"
+            ],
+            "properties": {
+                "email": {
+                    "description": "Email del usuario (único)",
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "user@example.com"
+                },
+                "first_name": {
+                    "description": "Nombre del usuario",
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2,
+                    "example": "John"
+                },
+                "last_name": {
+                    "description": "Apellido del usuario",
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2,
+                    "example": "Doe"
+                },
+                "password": {
+                    "description": "Contraseña (mínimo 8 caracteres)",
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 8,
+                    "example": "SecurePass123!"
+                },
+                "role": {
+                    "description": "Rol del usuario",
+                    "enum": [
+                        "SUPER_ADMIN",
+                        "COMPANY",
+                        "CONSUMER"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_domain_auth.Role"
+                        }
+                    ],
+                    "example": "COMPANY"
+                }
+            }
+        },
+        "RequestPasswordResetRequest": {
+            "description": "Request para solicitar recuperación de contraseña",
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "description": "Email del usuario",
+                    "type": "string",
+                    "example": "user@example.com"
+                }
+            }
+        },
+        "UserDTO": {
+            "description": "Información del usuario (sin datos sensibles)",
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "Fecha de creación",
+                    "type": "string",
+                    "example": "2026-03-01T10:00:00Z"
+                },
+                "email": {
+                    "description": "Email del usuario",
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "first_name": {
+                    "description": "Nombre del usuario",
+                    "type": "string",
+                    "example": "John"
+                },
+                "id": {
+                    "description": "ID único del usuario",
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                },
+                "is_active": {
+                    "description": "Indica si el usuario está activo",
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_email_verified": {
+                    "description": "Indica si el email está verificado",
+                    "type": "boolean",
+                    "example": false
+                },
+                "last_login_at": {
+                    "description": "Fecha y hora del último login",
+                    "type": "string",
+                    "example": "2026-03-02T15:04:05Z"
+                },
+                "last_name": {
+                    "description": "Apellido del usuario",
+                    "type": "string",
+                    "example": "Doe"
+                },
+                "role": {
+                    "description": "Rol del usuario",
+                    "enum": [
+                        "SUPER_ADMIN",
+                        "COMPANY",
+                        "CONSUMER"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_Ju4n-Dieg0_Go_Points_internal_domain_auth.Role"
+                        }
+                    ],
+                    "example": "COMPANY"
+                },
+                "updated_at": {
+                    "description": "Fecha de última actualización",
+                    "type": "string",
+                    "example": "2026-03-02T14:30:00Z"
+                }
+            }
+        },
+        "github_com_Ju4n-Dieg0_Go_Points_internal_domain_auth.Role": {
+            "type": "string",
+            "enum": [
+                "SUPER_ADMIN",
+                "COMPANY",
+                "CONSUMER"
+            ],
+            "x-enum-varnames": [
+                "RoleSuperAdmin",
+                "RoleCompany",
+                "RoleConsumer"
+            ]
+        },
+        "github_com_Ju4n-Dieg0_Go_Points_internal_shared_errors.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "details": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "error": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Type \"Bearer\" followed by a space and JWT token.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "x-logo": "{\"url\": \"https://gopoints.com/logo.png\", \"altText\": \"Go Points Logo\"}"
+        }
+    }
+}
