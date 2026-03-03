@@ -13,6 +13,7 @@ type Config struct {
 	Database DatabaseConfig
 	JWT      JWTConfig
 	App      AppConfig
+	File     FileConfig
 }
 
 type ServerConfig struct {
@@ -46,6 +47,12 @@ type AppConfig struct {
 	Name        string
 	Environment string
 	LogLevel    string
+}
+
+type FileConfig struct {
+	UploadDir     string
+	MaxSize       int64    // bytes
+	AllowedTypes  []string // MIME types
 }
 
 func Load() (*Config, error) {
@@ -100,6 +107,11 @@ func Load() (*Config, error) {
 			Environment: viper.GetString("APP_ENV"),
 			LogLevel:    viper.GetString("LOG_LEVEL"),
 		},
+		File: FileConfig{
+			UploadDir:    viper.GetString("FILE_UPLOAD_DIR"),
+			MaxSize:      viper.GetInt64("FILE_MAX_SIZE"),
+			AllowedTypes: viper.GetStringSlice("FILE_ALLOWED_TYPES"),
+		},
 	}
 
 	if err := config.Validate(); err != nil {
@@ -138,6 +150,11 @@ func setDefaults() {
 	viper.SetDefault("APP_NAME", "Go Points API")
 	viper.SetDefault("APP_ENV", "development")
 	viper.SetDefault("LOG_LEVEL", "info")
+
+	// File defaults
+	viper.SetDefault("FILE_UPLOAD_DIR", "uploads")
+	viper.SetDefault("FILE_MAX_SIZE", 5242880) // 5MB
+	viper.SetDefault("FILE_ALLOWED_TYPES", []string{"image/jpeg", "image/jpg", "image/png", "image/webp"})
 }
 
 func (c *Config) Validate() error {

@@ -11,12 +11,14 @@ import (
 	authService "github.com/Ju4n-Dieg0/Go_Points/internal/application/auth"
 	companyService "github.com/Ju4n-Dieg0/Go_Points/internal/application/company"
 	consumerService "github.com/Ju4n-Dieg0/Go_Points/internal/application/consumer"
+	productService "github.com/Ju4n-Dieg0/Go_Points/internal/application/product"
 	subscriptionService "github.com/Ju4n-Dieg0/Go_Points/internal/application/subscription"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/config"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/database"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/domain/auth"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/domain/company"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/domain/consumer"
+	"github.com/Ju4n-Dieg0/Go_Points/internal/domain/product"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/domain/subscription"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/infrastructure/http/handler"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/infrastructure/http/routes"
@@ -62,6 +64,7 @@ func main() {
 		&company.Company{},
 		&subscription.Subscription{},
 		&consumer.Consumer{},
+		&product.Product{},
 	); err != nil {
 		logger.Error("Failed to run migrations", "error", err)
 		os.Exit(1)
@@ -73,25 +76,29 @@ func main() {
 	companyRepo := persistence.NewCompanyRepository(db.GetDB())
 	subscriptionRepo := persistence.NewSubscriptionRepository(db.GetDB())
 	consumerRepo := persistence.NewConsumerRepository(db.GetDB())
+	productRepo := persistence.NewProductRepository(db.GetDB())
 
 	// Services
 	emailService := service.NewStubEmailService()
+	fileService := service.NewLocalFileService(cfg.File)
 	authSvc := authService.NewService(authRepo, emailService, &cfg.JWT)
 	companySvc := companyService.NewService(companyRepo, subscriptionRepo, db.GetDB())
 	subscriptionSvc := subscriptionService.NewService(subscriptionRepo, companyRepo, db.GetDB())
 	consumerSvc := consumerService.NewService(consumerRepo)
+	productSvc := productService.NewService(productRepo, fileService, subscriptionSvc)
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authSvc)
 	companyHandler := handler.NewCompanyHandler(companySvc)
 	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionSvc)
 	consumerHandler := handler.NewConsumerHandler(consumerSvc)
+	productHandler := handler.NewProductHandler(productSvc)
 
 	// Crear aplicación Fiber
 	app := createFiberApp(cfg)
 
 	// Configurar rutas
-	setupRoutes(app, db, authHandler, companyHandler, subscriptionHandler, consumerHandler, cfg)
+	setupRoutes(app, db, authHandler, companyHandler, subscriptionHandler, consumerHandler, productHandler, cfg)
 
 	// Iniciar servidor en una goroutine
 	go func() {
@@ -137,6 +144,7 @@ func setupRoutes(
 	companyHandler *handler.CompanyHandler,
 	subscriptionHandler *handler.SubscriptionHandler,
 	consumerHandler *handler.ConsumerHandler,
+	productHandler *handler.ProductHandler,
 	cfg *config.Config,
 ) {
 	// Health check endpoint
@@ -174,6 +182,7 @@ func setupRoutes(
 	routes.SetupCompanyRoutes(api, companyHandler, &cfg.JWT)
 	routes.SetupSubscriptionRoutes(api, subscriptionHandler, &cfg.JWT)
 	routes.SetupConsumerRoutes(api, consumerHandler, &cfg.JWT)
+	routes.SetupProductRoutes(api, productHandler, &cfg.JWT)
 
 	// Aquí se agregarán más rutas cuando se implementen otros módulos
 	// Ejemplo:
