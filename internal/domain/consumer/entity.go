@@ -21,15 +21,15 @@ const (
 // Consumer representa la entidad de consumidor en el dominio
 type Consumer struct {
 	ID             uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
-	DocumentType   DocumentType   `gorm:"type:varchar(20);not null;index:idx_document"`
-	DocumentNumber string         `gorm:"type:varchar(50);not null;uniqueIndex:idx_document_number"`
-	Name           string         `gorm:"type:varchar(255);not null;index"`
-	Email          string         `gorm:"type:varchar(255);not null;index"`
-	Phone          *string        `gorm:"type:varchar(20)"`
+	DocumentType   DocumentType   `gorm:"type:varchar(20);not null;index:idx_consumer_document,priority:1"`
+	DocumentNumber string         `gorm:"type:varchar(50);not null;uniqueIndex:idx_consumer_document_unique;index:idx_consumer_document,priority:2"`
+	Name           string         `gorm:"type:varchar(255);not null;index:idx_consumer_name"`
+	Email          string         `gorm:"type:varchar(255);not null;uniqueIndex:idx_consumer_email"`
+	Phone          *string        `gorm:"type:varchar(20);index:idx_consumer_phone"`
 	Photo          *string        `gorm:"type:text"`
-	CreatedAt      time.Time      `gorm:"autoCreateTime;index"`
-	UpdatedAt      time.Time      `gorm:"autoUpdateTime"`
-	DeletedAt      gorm.DeletedAt `gorm:"index"`
+	CreatedAt      time.Time      `gorm:"autoCreateTime;not null;index:idx_consumer_created"`
+	UpdatedAt      time.Time      `gorm:"autoUpdateTime;not null"`
+	DeletedAt      gorm.DeletedAt `gorm:"index:idx_consumer_deleted"`
 }
 
 // TableName especifica el nombre de la tabla

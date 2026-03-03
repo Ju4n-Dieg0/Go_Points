@@ -9,13 +9,16 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig
-	Database DatabaseConfig
-	JWT      JWTConfig
-	App      AppConfig
-	File     FileConfig
-	Points   PointsConfig
-	Email    EmailConfig
+	Server      ServerConfig
+	Database    DatabaseConfig
+	JWT         JWTConfig
+	App         AppConfig
+	File        FileConfig
+	Points      PointsConfig
+	Email       EmailConfig
+	RateLimit   RateLimitConfig
+	CORS        CORSConfig
+	Security    SecurityConfig
 }
 
 type ServerConfig struct {
@@ -71,6 +74,30 @@ type EmailConfig struct {
 	SMTPPassword string
 	FromEmail    string
 	FromName     string
+}
+
+type RateLimitConfig struct {
+	Enabled         bool
+	AuthRequests    int // Requests permitidos para auth endpoints
+	AuthWindow      int // Ventana en segundos
+	GeneralRequests int // Requests para endpoints generales
+	GeneralWindow   int // Ventana en segundos
+}
+
+type CORSConfig struct {
+	AllowedOrigins   []string
+	AllowCredentials bool
+	MaxAge           int
+}
+
+type SecurityConfig struct {
+	BcryptCost           int  // Cost para bcrypt (4-31, default 10)
+	MaxLoginAttempts     int  // Intentos máximos de login
+	LockoutDuration      int  // Duración de bloqueo en minutos
+	PasswordMinLength    int  // Longitud mínima de contraseña
+	RequireSpecialChar   bool // Requerir carácter especial en contraseña
+	JWTIssuer            string
+	JWTAudience          string
 }
 
 func Load() (*Config, error) {
@@ -144,6 +171,27 @@ func Load() (*Config, error) {
 			FromEmail:    viper.GetString("EMAIL_FROM"),
 			FromName:     viper.GetString("EMAIL_FROM_NAME"),
 		},
+		RateLimit: RateLimitConfig{
+			Enabled:         viper.GetBool("RATE_LIMIT_ENABLED"),
+			AuthRequests:    viper.GetInt("RATE_LIMIT_AUTH_REQUESTS"),
+			AuthWindow:      viper.GetInt("RATE_LIMIT_AUTH_WINDOW"),
+			GeneralRequests: viper.GetInt("RATE_LIMIT_GENERAL_REQUESTS"),
+			GeneralWindow:   viper.GetInt("RATE_LIMIT_GENERAL_WINDOW"),
+		},
+		CORS: CORSConfig{
+			AllowedOrigins:   viper.GetStringSlice("CORS_ALLOWED_ORIGINS"),
+			AllowCredentials: viper.GetBool("CORS_ALLOW_CREDENTIALS"),
+			MaxAge:           viper.GetInt("CORS_MAX_AGE"),
+		},
+		Security: SecurityConfig{
+			BcryptCost:         viper.GetInt("BCRYPT_COST"),
+			MaxLoginAttempts:   viper.GetInt("MAX_LOGIN_ATTEMPTS"),
+			LockoutDuration:    viper.GetInt("LOCKOUT_DURATION"),
+			PasswordMinLength:  viper.GetInt("PASSWORD_MIN_LENGTH"),
+			RequireSpecialChar: viper.GetBool("PASSWORD_REQUIRE_SPECIAL"),
+			JWTIssuer:          viper.GetString("JWT_ISSUER"),
+			JWTAudience:        viper.GetString("JWT_AUDIENCE"),
+		},
 	}
 
 	if err := config.Validate(); err != nil {
@@ -201,6 +249,27 @@ func setDefaults() {
 	viper.SetDefault("SMTP_PASSWORD", "")
 	viper.SetDefault("EMAIL_FROM", "noreply@gopoints.com")
 	viper.SetDefault("EMAIL_FROM_NAME", "Go Points")
+
+	// Rate Limit defaults
+	viper.SetDefault("RATE_LIMIT_ENABLED", true)
+	viper.SetDefault("RATE_LIMIT_AUTH_REQUESTS", 5)      // 5 requests
+	viper.SetDefault("RATE_LIMIT_AUTH_WINDOW", 60)       // por minuto
+	viper.SetDefault("RATE_LIMIT_GENERAL_REQUESTS", 100) // 100 requests
+	viper.SetDefault("RATE_LIMIT_GENERAL_WINDOW", 60)    // por minuto
+
+	// CORS defaults
+	viper.SetDefault("CORS_ALLOWED_ORIGINS", []string{"http://localhost:3000"})
+	viper.SetDefault("CORS_ALLOW_CREDENTIALS", true)
+	viper.SetDefault("CORS_MAX_AGE", 3600)
+
+	// Security defaults
+	viper.SetDefault("BCRYPT_COST", 10)
+	viper.SetDefault("MAX_LOGIN_ATTEMPTS", 5)
+	viper.SetDefault("LOCKOUT_DURATION", 15) // minutos
+	viper.SetDefault("PASSWORD_MIN_LENGTH", 8)
+	viper.SetDefault("PASSWORD_REQUIRE_SPECIAL", true)
+	viper.SetDefault("JWT_ISSUER", "go-points-api")
+	viper.SetDefault("JWT_AUDIENCE", "go-points-users")
 }
 
 func (c *Config) Validate() error {

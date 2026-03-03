@@ -159,8 +159,26 @@ func createFiberApp(cfg *config.Config) *fiber.App {
 	app.Use(errors.RecoverMiddleware())
 	app.Use(middleware.RequestID())
 	app.Use(middleware.Logger())
-	app.Use(middleware.CORS())
-	app.Use(middleware.Security())
+	
+	// CORS configurado
+	corsConfig := middleware.CORSConfig{
+		AllowedOrigins:   cfg.CORS.AllowedOrigins,
+		AllowCredentials: cfg.CORS.AllowCredentials,
+		MaxAge:           cfg.CORS.MaxAge,
+	}
+	app.Use(middleware.NewCORSMiddleware(corsConfig))
+	
+	// Security headers
+	app.Use(middleware.SecurityHeaders())
+	
+	// Rate limiting si está habilitado
+	if cfg.RateLimit.Enabled {
+		generalRateLimiter := middleware.NewRateLimiter(
+			cfg.RateLimit.GeneralRequests,
+			time.Duration(cfg.RateLimit.GeneralWindow)*time.Second,
+		)
+		app.Use(generalRateLimiter.Middleware())
+	}
 
 	return app
 }

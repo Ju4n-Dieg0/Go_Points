@@ -41,8 +41,10 @@ func NewDatabase(cfg *config.DatabaseConfig, appEnv string) (*Database, error) {
 		NowFunc: func() time.Time {
 			return time.Now().UTC()
 		},
-		PrepareStmt:            true,
-		SkipDefaultTransaction: false,
+		PrepareStmt:            true,  // Preparar statements para mejor performance
+		SkipDefaultTransaction: false, // Mantener transacciones automáticas por seguridad
+		QueryFields:            true,  // Seleccionar campos específicos
+		DisableForeignKeyConstraintWhenMigrating: false, // Mantener constraints
 	}
 
 	db, err := gorm.Open(postgres.Open(dsn), gormConfig)
@@ -59,6 +61,7 @@ func NewDatabase(cfg *config.DatabaseConfig, appEnv string) (*Database, error) {
 	sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)
 	sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)
 	sqlDB.SetConnMaxLifetime(time.Duration(cfg.ConnMaxLifetime) * time.Second)
+	sqlDB.SetConnMaxIdleTime(5 * time.Minute) // Cerrar conexiones idle después de 5 min
 
 	// Verificar conexión
 	if err := sqlDB.Ping(); err != nil {

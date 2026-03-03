@@ -9,11 +9,11 @@ import (
 // Subscription representa la entidad de suscripción en el dominio
 type Subscription struct {
 	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
-	CompanyID uuid.UUID `gorm:"type:uuid;not null;index:idx_company_active"`
-	StartDate time.Time `gorm:"not null;index"`
-	EndDate   time.Time `gorm:"not null;index:idx_company_active,idx_end_date"`
-	IsActive  bool      `gorm:"default:true;not null;index:idx_company_active"`
-	CreatedAt time.Time `gorm:"autoCreateTime"`
+	CompanyID uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_company_subscription_unique;index:idx_subscription_company_active,priority:1;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	StartDate time.Time `gorm:"not null;index:idx_subscription_start"`
+	EndDate   time.Time `gorm:"not null;index:idx_subscription_end;index:idx_subscription_company_active,priority:3"`
+	IsActive  bool      `gorm:"default:true;not null;index:idx_subscription_active;index:idx_subscription_company_active,priority:2"`
+	CreatedAt time.Time `gorm:"autoCreateTime;not null"`
 }
 
 // TableName especifica el nombre de la tabla

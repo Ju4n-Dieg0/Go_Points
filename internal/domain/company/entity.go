@@ -10,12 +10,12 @@ import (
 // Company representa la entidad de empresa en el dominio
 type Company struct {
 	ID        uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
-	Name      string         `gorm:"type:varchar(255);not null;index"`
+	Name      string         `gorm:"type:varchar(255);not null;index:idx_company_name"`
 	Logo      *string        `gorm:"type:text"`
-	IsActive  bool           `gorm:"default:true;not null;index"`
-	CreatedAt time.Time      `gorm:"autoCreateTime;index"`
-	UpdatedAt time.Time      `gorm:"autoUpdateTime"`
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	IsActive  bool           `gorm:"default:true;not null;index:idx_company_active"`
+	CreatedAt time.Time      `gorm:"autoCreateTime;not null;index:idx_company_created"`
+	UpdatedAt time.Time      `gorm:"autoUpdateTime;not null"`
+	DeletedAt gorm.DeletedAt `gorm:"index:idx_company_deleted"`
 }
 
 // TableName especifica el nombre de la tabla

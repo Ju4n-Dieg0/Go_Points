@@ -18,6 +18,9 @@ const (
 	ErrorTypeBadRequest     ErrorType = "BAD_REQUEST"
 	ErrorTypeDatabase       ErrorType = "DATABASE_ERROR"
 	ErrorTypeAuthentication ErrorType = "AUTHENTICATION_ERROR"
+	ErrorTypeRateLimit      ErrorType = "RATE_LIMIT_EXCEEDED"
+	ErrorTypeTimeout        ErrorType = "TIMEOUT"
+	ErrorTypeServiceUnavail ErrorType = "SERVICE_UNAVAILABLE"
 )
 
 // AppError representa un error de aplicación personalizado
@@ -115,6 +118,24 @@ var (
 		ErrorTypeAuthentication,
 		"Authentication failed",
 		401,
+	)
+
+	ErrRateLimit = NewAppError(
+		ErrorTypeRateLimit,
+		"Rate limit exceeded",
+		429,
+	)
+
+	ErrTimeout = NewAppError(
+		ErrorTypeTimeout,
+		"Request timeout",
+		408,
+	)
+
+	ErrServiceUnavailable = NewAppError(
+		ErrorTypeServiceUnavail,
+		"Service temporarily unavailable",
+		503,
 	)
 )
 
