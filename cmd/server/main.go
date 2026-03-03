@@ -11,6 +11,7 @@ import (
 	authService "github.com/Ju4n-Dieg0/Go_Points/internal/application/auth"
 	companyService "github.com/Ju4n-Dieg0/Go_Points/internal/application/company"
 	consumerService "github.com/Ju4n-Dieg0/Go_Points/internal/application/consumer"
+	pointService "github.com/Ju4n-Dieg0/Go_Points/internal/application/point"
 	productService "github.com/Ju4n-Dieg0/Go_Points/internal/application/product"
 	subscriptionService "github.com/Ju4n-Dieg0/Go_Points/internal/application/subscription"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/config"
@@ -18,6 +19,7 @@ import (
 	"github.com/Ju4n-Dieg0/Go_Points/internal/domain/auth"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/domain/company"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/domain/consumer"
+	"github.com/Ju4n-Dieg0/Go_Points/internal/domain/point"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/domain/product"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/domain/subscription"
 	"github.com/Ju4n-Dieg0/Go_Points/internal/infrastructure/http/handler"
@@ -65,6 +67,9 @@ func main() {
 		&subscription.Subscription{},
 		&consumer.Consumer{},
 		&product.Product{},
+		&point.ConsumerCompanyPoints{},
+		&point.PointTransaction{},
+		&point.CompanyRankConfig{},
 	); err != nil {
 		logger.Error("Failed to run migrations", "error", err)
 		os.Exit(1)
@@ -77,15 +82,20 @@ func main() {
 	subscriptionRepo := persistence.NewSubscriptionRepository(db.GetDB())
 	consumerRepo := persistence.NewConsumerRepository(db.GetDB())
 	productRepo := persistence.NewProductRepository(db.GetDB())
+	balanceRepo := persistence.NewBalanceRepository(db.GetDB())
+	transactionRepo := persistence.NewTransactionRepository(db.GetDB())
+	rankConfigRepo := persistence.NewRankConfigRepository(db.GetDB())
 
 	// Services
 	emailService := service.NewStubEmailService()
 	fileService := service.NewLocalFileService(cfg.File)
+	notificationService := service.NewStubNotificationService()
 	authSvc := authService.NewService(authRepo, emailService, &cfg.JWT)
 	companySvc := companyService.NewService(companyRepo, subscriptionRepo, db.GetDB())
 	subscriptionSvc := subscriptionService.NewService(subscriptionRepo, companyRepo, db.GetDB())
 	consumerSvc := consumerService.NewService(consumerRepo)
 	productSvc := productService.NewService(productRepo, fileService, subscriptionSvc)
+	pointSvc := pointService.NewService(db.GetDB(), balanceRepo, transactionRepo, rankConfigRepo, notificationService, cfg.Points)
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authSvc)
@@ -93,12 +103,13 @@ func main() {
 	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionSvc)
 	consumerHandler := handler.NewConsumerHandler(consumerSvc)
 	productHandler := handler.NewProductHandler(productSvc)
+	pointHandler := handler.NewPointHandler(pointSvc)
 
 	// Crear aplicación Fiber
 	app := createFiberApp(cfg)
 
 	// Configurar rutas
-	setupRoutes(app, db, authHandler, companyHandler, subscriptionHandler, consumerHandler, productHandler, cfg)
+	setupRoutes(app, db, authHandler, companyHandler, subscriptionHandler, consumerHandler, productHandler, pointHandler, cfg)
 
 	// Iniciar servidor en una goroutine
 	go func() {
@@ -145,6 +156,7 @@ func setupRoutes(
 	subscriptionHandler *handler.SubscriptionHandler,
 	consumerHandler *handler.ConsumerHandler,
 	productHandler *handler.ProductHandler,
+	pointHandler *handler.PointHandler,
 	cfg *config.Config,
 ) {
 	// Health check endpoint
@@ -183,6 +195,7 @@ func setupRoutes(
 	routes.SetupSubscriptionRoutes(api, subscriptionHandler, &cfg.JWT)
 	routes.SetupConsumerRoutes(api, consumerHandler, &cfg.JWT)
 	routes.SetupProductRoutes(api, productHandler, &cfg.JWT)
+	routes.SetupPointRoutes(api, pointHandler, &cfg.JWT)
 
 	// Aquí se agregarán más rutas cuando se implementen otros módulos
 	// Ejemplo:

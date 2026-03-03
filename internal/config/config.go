@@ -14,6 +14,7 @@ type Config struct {
 	JWT      JWTConfig
 	App      AppConfig
 	File     FileConfig
+	Points   PointsConfig
 }
 
 type ServerConfig struct {
@@ -53,6 +54,13 @@ type FileConfig struct {
 	UploadDir     string
 	MaxSize       int64    // bytes
 	AllowedTypes  []string // MIME types
+}
+
+type PointsConfig struct {
+	ExpirationMonths       int // Meses para expiración de puntos
+	InactivityMonths       int // Meses de inactividad para penalización
+	InactivityPenalty      int64 // Puntos a restar por inactividad
+	NotificationBeforeDays int // Días antes de notificar expiración
 }
 
 func Load() (*Config, error) {
@@ -112,6 +120,12 @@ func Load() (*Config, error) {
 			MaxSize:      viper.GetInt64("FILE_MAX_SIZE"),
 			AllowedTypes: viper.GetStringSlice("FILE_ALLOWED_TYPES"),
 		},
+		Points: PointsConfig{
+			ExpirationMonths:       viper.GetInt("POINT_EXPIRATION_MONTHS"),
+			InactivityMonths:       viper.GetInt("INACTIVITY_MONTHS"),
+			InactivityPenalty:      viper.GetInt64("INACTIVITY_PENALTY"),
+			NotificationBeforeDays: viper.GetInt("NOTIFICATION_BEFORE_DAYS"),
+		},
 	}
 
 	if err := config.Validate(); err != nil {
@@ -155,6 +169,12 @@ func setDefaults() {
 	viper.SetDefault("FILE_UPLOAD_DIR", "uploads")
 	viper.SetDefault("FILE_MAX_SIZE", 5242880) // 5MB
 	viper.SetDefault("FILE_ALLOWED_TYPES", []string{"image/jpeg", "image/jpg", "image/png", "image/webp"})
+
+	// Points defaults
+	viper.SetDefault("POINT_EXPIRATION_MONTHS", 12)  // 12 meses
+	viper.SetDefault("INACTIVITY_MONTHS", 6)         // 6 meses
+	viper.SetDefault("INACTIVITY_PENALTY", 100)      // 100 puntos
+	viper.SetDefault("NOTIFICATION_BEFORE_DAYS", 7)  // 7 días antes
 }
 
 func (c *Config) Validate() error {
